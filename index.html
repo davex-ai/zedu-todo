@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Todo list</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f2f4f1;--panel:#fff;--ink:#1d2a25;--mute:#6b7a73;--line:#d9dfdb;--accent:#1f6f5c;--accent-ink:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121816;--panel:#1b2420;--ink:#e6ede9;--mute:#8fa097;--line:#2c3833;--accent:#5fc4a8;--accent-ink:#0b1a15}}
+:root[data-theme="dark"]{--bg:#121816;--panel:#1b2420;--ink:#e6ede9;--mute:#8fa097;--line:#2c3833;--accent:#5fc4a8;--accent-ink:#0b1a15}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.5}
+main{max-width:34rem;margin:0 auto;padding:2.5rem 1rem}
+h1{font-size:2.4rem;margin:0 0 .25rem;letter-spacing:-.02em}
+.count{color:var(--mute);margin:0 0 1.5rem}
+.add{display:flex;gap:.5rem;margin-bottom:1rem}
+input[type=text]{flex:1;min-width:0;padding:.75rem .9rem;font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:.5rem .8rem}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.filters{display:flex;gap:.4rem;margin-bottom:.75rem}
+.filters button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+ul{list-style:none;margin:0;padding:0;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+li{display:flex;align-items:center;gap:.7rem;padding:.7rem .9rem;border-bottom:1px solid var(--line)}
+li:last-child{border-bottom:0}
+li input{width:1.15rem;height:1.15rem;accent-color:var(--accent)}
+li span{flex:1;word-break:break-word}
+li.done span{text-decoration:line-through;color:var(--mute)}
+li button{border:0;background:none;color:var(--mute);padding:.2rem .5rem}
+.empty{padding:1.2rem .9rem;color:var(--mute)}
+.foot{display:flex;justify-content:space-between;margin-top:.75rem}
+.foot button{border:0;background:none;color:var(--mute);padding:0}
+</style>
+</head>
+<body>
+<main>
+<h1>Todo list</h1>
+<p class="count" id="count"></p>
+<div class="add">
+<input type="text" id="new" placeholder="What needs doing?" aria-label="New task" autocomplete="off">
+<button class="primary" id="addBtn">Add task</button>
+</div>
+<div class="filters" role="group" aria-label="Filter tasks">
+<button data-f="all" aria-pressed="true">All</button>
+<button data-f="open" aria-pressed="false">Open</button>
+<button data-f="done" aria-pressed="false">Done</button>
+</div>
+<ul id="list"></ul>
+<div class="foot"><button id="clear">Clear completed</button></div>
+</main>
+<script>
+let todos=[],filter='all',nid=1;
+try{const s=localStorage.getItem('todos');if(s){todos=JSON.parse(s);nid=Math.max(0,...todos.map(t=>t.id))+1}}catch(e){}
+const save=()=>{try{localStorage.setItem('todos',JSON.stringify(todos))}catch(e){}};
+const $=id=>document.getElementById(id);
+function render(){
+  const open=todos.filter(t=>!t.done).length;
+  $('count').textContent=open+' open, '+(todos.length-open)+' done';
+  const shown=todos.filter(t=>filter==='all'||(filter==='open'?!t.done:t.done));
+  const ul=$('list');ul.innerHTML='';
+  if(!shown.length){const li=document.createElement('li');li.className='empty';li.textContent=todos.length?'Nothing in this view.':'No tasks yet. Add your first one above.';ul.appendChild(li);return}
+  shown.forEach(t=>{
+    const li=document.createElement('li');if(t.done)li.className='done';
+    const cb=document.createElement('input');cb.type='checkbox';cb.checked=t.done;cb.setAttribute('aria-label','Mark done');
+    cb.onchange=()=>{t.done=cb.checked;save();render()};
+    const sp=document.createElement('span');sp.textContent=t.text;
+    const del=document.createElement('button');del.textContent='Delete';del.setAttribute('aria-label','Delete '+t.text);
+    del.onclick=()=>{todos=todos.filter(x=>x!==t);save();render()};
+    li.append(cb,sp,del);ul.appendChild(li);
+  });
+}
+function add(){const v=$('new').value.trim();if(!v)return;todos.push({id:nid++,text:v,done:false});$('new').value='';save();render()}
+$('addBtn').onclick=add;
+$('new').onkeydown=e=>{if(e.key==='Enter')add()};
+$('clear').onclick=()=>{todos=todos.filter(t=>!t.done);save();render()};
+document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.setAttribute('aria-pressed',x===b));render()});
+render();
+</script>
+</body>
+</html>

@@ -47,7 +47,10 @@ li button{border:0;background:none;color:var(--mute);padding:.2rem .5rem}
 <button data-f="done" aria-pressed="false">Done</button>
 </div>
 <ul id="list"></ul>
-<div class="foot"><button id="clear">Clear completed</button></div>
+<div class="foot">
+<button id="clear">Clear completed</button>
+<button id="sample" class="primary">Load sample data</button>
+</div>
 </main>
 <script>
 let todos=[],filter='all',nid=1;
@@ -75,6 +78,20 @@ $('addBtn').onclick=add;
 $('new').onkeydown=e=>{if(e.key==='Enter')add()};
 $('clear').onclick=()=>{todos=todos.filter(t=>!t.done);save();render()};
 document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.setAttribute('aria-pressed',x===b));render()});
+const SAMPLE=[
+  ['Plan the week ahead',true],['Reply to client emails',true],['Book dentist appointment',false],
+  ['Finish the project proposal',false],['Buy groceries for Sunday',false],['Review pull requests',true],
+  ['Call mum',false],['Renew internet subscription',false]
+];
+let sampleOn=false;
+function syncSampleBtn(){const b=$('sample');b.textContent=sampleOn?'Back to empty state':'Load sample data';b.className=sampleOn?'':'primary'}
+$('sample').onclick=()=>{
+  sampleOn=!sampleOn;
+  todos=sampleOn?SAMPLE.map((s,i)=>({id:i+1,text:s[0],done:s[1]})):[];
+  nid=todos.length+1;filter='all';
+  document.querySelectorAll('.filters button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.f==='all'));
+  save();syncSampleBtn();render();
+};
 render();
 </script>
 </body>
